@@ -1,0 +1,60 @@
+EXPRESSIONS DU GUIDE : copiez-les depuis ce fichier, une ligne entière à la fois.
+Un PDF coupe les lignes longues et ajoute des espaces au copier-coller ; ce fichier n'en ajoute aucun.
+
+=== PL_Load_Day (pipeline enfant) ===
+
+[Stage file] Nom de fichier source
+@{pipeline().parameters.file}
+
+[Get weather] URL relative
+/v1/forecast?latitude=49.12&longitude=6.18&daily=temperature_2m_max,precipitation_sum&timezone=Europe%2FParis&start_date=@{pipeline().parameters.run_date}&end_date=@{pipeline().parameters.run_date}
+
+[Load day] run_date (DateTime)
+@pipeline().parameters.run_date
+
+[Load day] batch_id (String)
+@pipeline().parameters.batch_id
+
+[Load day] mode (String)
+@pipeline().parameters.mode
+
+[Load day] temp_max (Decimal)
+@activity('Get weather').output.daily.temperature_2m_max[0]
+
+[Load day] rain_mm (Decimal)
+@activity('Get weather').output.daily.precipitation_sum[0]
+
+=== PL_Orchestrator ===
+
+[Wait for batch] Expression
+@activity('Check batch').output.exists
+
+[Check batch] et [Read batch] Nom de fichier
+batch_@{pipeline().parameters.batch_id}.json
+
+[Route by mode] Expression
+@or(equals(activity('Read batch').output.firstRow.mode, 'standard'), equals(activity('Read batch').output.firstRow.mode, 'correction'))
+
+[Load batch] batch_id
+@activity('Read batch').output.firstRow.batch_id
+
+[Load batch] mode
+@activity('Read batch').output.firstRow.mode
+
+[Load batch] file
+@activity('Read batch').output.firstRow.file
+
+[Load batch] run_date
+@activity('Read batch').output.firstRow.run_date
+
+[Unknown mode] Message d'échec
+@concat('Mode de lot inconnu : ', activity('Read batch').output.firstRow.mode)
+
+[Send report] Objet
+Lot @{pipeline().parameters.batch_id} chargé en mode @{activity('Read batch').output.firstRow.mode}
+
+=== WH_Market : contrôle rapide ===
+
+SELECT 'stg_sales' AS table_name, COUNT(*) AS lignes FROM dbo.stg_sales
+UNION ALL SELECT 'fact_sales', COUNT(*) FROM dbo.fact_sales
+UNION ALL SELECT 'audit_restatements', COUNT(*) FROM dbo.audit_restatements;
