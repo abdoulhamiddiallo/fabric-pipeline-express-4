@@ -1,28 +1,35 @@
 # 🎼 Fabric Pipeline Express 4 : attendre, router, appeler, remplacer
 
+![Microsoft Fabric](https://img.shields.io/badge/Microsoft_Fabric-Data_Factory-0F6CBD?style=for-the-badge)
+![Pipelines](https://img.shields.io/badge/Pipelines-2-5C2D91?style=for-the-badge)
+![Activités](https://img.shields.io/badge/Activit%C3%A9s-11-9C6B00?style=for-the-badge)
+![Code](https://img.shields.io/badge/Code_dans_les_pipelines-0_ligne-0F7B0F?style=for-the-badge)
+![T-SQL](https://img.shields.io/badge/Warehouse-T--SQL-0B2A4A?style=for-the-badge)
+![API](https://img.shields.io/badge/API-Open--Meteo-C50F1F?style=for-the-badge)
+
 Deux pipelines Microsoft Fabric Data Factory qui travaillent comme une équipe de production. Un orchestrateur attend l'arrivée d'un lot, lit son manifeste, décide de la route selon le mode du lot et appelle un pipeline enfant. L'enfant charge les ventes dans un entrepôt, interroge une API météo publique et remplace la journée par une procédure stockée, en gardant la trace de chaque correction. Onze activités, onze types, aucune ligne de code dans les pipelines, et un chargement que l'on peut rejouer autant de fois que l'on veut.
 
-**Guide PDF de 7 pages inclus** : [`Pipeline_Fabric_Guide.pdf`](Pipeline_Fabric_Guide.pdf). Chaque activité, chaque champ, chaque expression, et les chiffres à retrouver à l'unité près. Toutes les expressions sont aussi dans [`data/expressions.txt`](data/expressions.txt), prêtes à copier.
+**Guide PDF de 7 pages inclus** : [`Pipeline_Fabric_Guide_4_public.pdf`](Pipeline_Fabric_Guide_4_public.pdf). Chaque activité, chaque champ, chaque expression, et les chiffres à retrouver à l'unité près. Toutes les expressions sont aussi dans [`data_market/expressions.txt`](data_market/expressions.txt), prêtes à copier.
 
-![Les deux pipelines : PL_Orchestrator appelle PL_Load_Day](docs/images/pipeline_diagram.svg)
+![Les deux pipelines : PL_Orchestrator appelle PL_Load_Day](images/pipeline_diagram.svg)
 
 ## 📸 Aperçu
 
 L'orchestrateur après une exécution réussie : la boucle d'attente, la lecture du manifeste, la condition qui appelle l'enfant ou refuse le lot, l'e-mail de bilan.
 
-![PL_Orchestrator dans Fabric](docs/images/pl_orchestrator.png)
+![PL_Orchestrator dans Fabric](images/Pp2.png)
 
 Le pipeline enfant : copie vers la zone de transit, appel de l'API météo, procédure stockée qui remplace la journée.
 
-![PL_Load_Day dans Fabric](docs/images/pl_load_day.png)
+![PL_Load_Day dans Fabric](images/Pp3.png)
 
 La table `fact_sales` après les sept exécutions : cinq journées, chacune en un seul exemplaire, avec la météo réelle de Metz et le lot qui l'a chargée. La journée du 6 porte le lot de correction.
 
-![Le résultat de la requête de vérification](docs/images/sql_results.png)
+![Le résultat de la requête de vérification](images/Pp1.png)
 
 L'espace de travail et son lignage : le lakehouse, l'entrepôt, les deux pipelines et leurs connexions.
 
-![Le lignage de l'espace de travail Fabric_Pipeline_4](docs/images/workspace_lineage.png)
+![Le lignage de l'espace de travail Fabric_Pipeline_4](images/Pp4.png)
 
 ## 🎯 Résultats clés
 
@@ -139,7 +146,7 @@ Les températures et la pluie sont les valeurs réelles de Metz renvoyées par l
 ## 📦 Jeu de données
 
 ```
-data/
+data_market/
 ├── sales_2026-10-04.csv            226 lignes
 ├── sales_2026-10-05.csv            230 lignes
 ├── sales_2026-10-06.csv            257 lignes, 9 salades en double à Nancy
@@ -160,10 +167,25 @@ Données de ventes fictives, conçues pour l'exercice. Données météo : [Open-
 
 ## 🚀 Reproduire l'exercice
 
-1. Créer un lakehouse `LH_Market`, un dossier `Files/inbox`, et y déposer tous les fichiers de `data/` sauf `batch_2026-10-08-1.json`.
+1. Créer un lakehouse `LH_Market`, un dossier `Files/inbox`, et y déposer tous les fichiers de `data_market/` sauf `batch_2026-10-08-1.json`.
 2. Créer un entrepôt `WH_Market` et exécuter le script SQL de la page 3 du guide : trois tables et la procédure `usp_load_day`.
-3. Construire `PL_Load_Day`, puis `PL_Orchestrator`, en suivant le guide et en copiant les expressions depuis `data/expressions.txt`.
-4. Exécuter les sept lots du tableau ci-dessus et retrouver les chiffres du résultat final.
+3. Construire `PL_Load_Day`, puis `PL_Orchestrator`, en suivant le guide et en copiant les expressions depuis `data_market/expressions.txt`.
+4. Exécuter les sept lots du tableau ci-dessus et retrouver les chiffres du résultat final. Le manifeste `batch_2026-10-07-1.json` est fourni dans sa version finale, en mode `standard` : pour rejouer le refus de l'exécution 5, passer d'abord son mode à `test`, puis le remettre à `standard`.
+
+## 📂 Structure du dépôt
+
+```
+fabric-pipeline-express-4/
+├── README.md
+├── Pipeline_Fabric_Guide_4_public.pdf   le guide de 7 pages
+├── data_market/                        ventes, manifestes et expressions
+└── images/
+    ├── pipeline_diagram.svg            le schéma des deux pipelines
+    ├── Pp1.png                         le résultat SQL final
+    ├── Pp2.png                         PL_Orchestrator dans Fabric
+    ├── Pp3.png                         PL_Load_Day dans Fabric
+    └── Pp4.png                         le lignage de l'espace de travail
+```
 
 ## 🧰 Stack technique
 
